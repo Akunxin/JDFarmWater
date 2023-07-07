@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>京东农场自动浇水</title>
+    <!--引入bootstrap框架相关的样式-->
+    <link rel="stylesheet" href="/static/bootstrap/css/bootstrap.css"/>
+    <script src="/static/bootstrap/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/default.min.css">
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <style>
+        .message {
+            margin: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            line-height: 1.5;
+            max-width: 100%;
+        }
+
+        .user-message {
+            background-color: #f3f3f3;
+        }
+
+        .bot-message {
+            background-color: #d0e8ff;
+        }
+
+        pre code {
+            display: block;
+            padding: 10px;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-x: auto;
+            background-color: #f4f4f4;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body style="text-align:center">
+<h1>京东农场自动浇水</h1>
+<div id="chatbox">
+    <div style="width: 100%; height: 300px; overflow-x: hidden; overflow-y: scroll;" id="messageContainer">
+  <div id="messages"></div>
+</div>
+    <div id="user-input">
+        <form id="user-form">
+            <input class="form-control" type="text" id="user-input-text" placeholder="cookie">
+            <p></p>
+            <input class="form-control" type="text" id="times" placeholder="浇水次数">
+            <p></p>
+            <input class="btn btn-success" type="submit" value="开始">
+        </form>
+    </div>
+    <p></p>
+    <div class="progress">
+        <div class="progress-bar" role="progressbar" aria-valuenow="1" aria-valuemin="0" aria-valuemax="100"
+             style="width: 10%">0.00%
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script>
+    function set_progress_rate(n, total) {
+        //设置进度
+        var rate = (n / total * 100).toFixed(2);
+        if (n > 0) {
+            $(".progress-bar").attr("aria-valuenow", n);
+            $(".progress-bar").attr("aria-valuemax", total);
+            $(".progress-bar").text(rate + "%");
+            $(".progress-bar").css("width", rate + "%");
+        }
+    }
+
+    $(function () {
+        $('#user-form').submit(function (event) {
+            event.preventDefault();
+            let n = 0;
+            var timer = setInterval(function () {
+                var user_input = $('#user-input-text').val();
+                var times = $('#times').val();
+                // $('#messages').append('<div class="message user-message">' + "浇水已开始,可以打开京东app查看浇水进度,浇水完成本页面会显示" + '</div>');
+                $.ajax({
+                    type: 'POST',
+                    url: '/get_response',
+                    data: {user_input: user_input},
+                    success: function (response) {
+                        $('#messages').append('<div class="message bot-message">' + response + '</div>');
+                        $('#messages').animate({scrollTop: $('#messages').prop("scrollHeight")}, 1000);
+                        $('pre code').each(function (i, block) {
+                            hljs.highlightBlock(block);
+                        });
+                    }
+                });
+                n += 1
+                set_progress_rate(n, times);
+                if (n >= times) {
+                    clearInterval(timer);
+                }
+            }, 3000);
+        });
+    });
+  
+var messageContainer = document.getElementById("messageContainer");
+
+  // 滚动到底部
+  function scrollToBottom() {
+    messageContainer.scrollTop = messageContainer.scrollHeight;
+  }
+  // 滚动事件监听器
+  messageContainer.addEventListener("scroll", function() {
+    // 判断是否滚动到底部
+    if (messageContainer.scrollHeight - messageContainer.scrollTop === messageContainer.clientHeight) {
+      // 已滚动到底部，禁止自动滚动
+      messageContainer.classList.remove("scroll-enabled");
+    } else {
+      // 未滚动到底部，启用自动滚动
+      messageContainer.classList.add("scroll-enabled");
+    }
+  });
+
+  // 自动滚动到底部
+  setInterval(function() {
+    if (messageContainer.classList.contains("scroll-enabled")) {
+      scrollToBottom();
+    }
+  }, 100);
+</script>
+</body>
+</html>
